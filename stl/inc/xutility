@@ -4405,12 +4405,39 @@ _OutIt _Copy_unchecked(_InIt _First, _InIt _Last, _OutIt _Dest) {
 }
 #endif // _HAS_IF_CONSTEXPR
 
+// _Iterators_are_contiguous<_Iter1, _Iter2> reports whether both iterators are known to be contiguous.
+// (Without concepts, this detection is limited, which will limit when we can activate the memcmp optimization.)
+
+#ifdef __cpp_lib_concepts
+// When concepts are available, we can detect arbitrary contiguous iterators.
+template <class _Iter1, class _Iter2>
+_INLINE_VAR constexpr bool _Iterators_are_contiguous = contiguous_iterator<_Iter1> //
+    && contiguous_iterator<_Iter2>;
+#else // ^^^ defined(__cpp_lib_concepts) ^^^ / vvv !defined(__cpp_lib_concepts) vvv
+// When concepts aren't available, we can detect pointers. (Iterators should be unwrapped before using this.)
+template <class _Iter1, class _Iter2>
+_INLINE_VAR constexpr bool _Iterators_are_contiguous = conjunction_v<is_pointer<_Iter1>, is_pointer<_Iter2>>;
+#endif // ^^^ !defined(__cpp_lib_concepts) ^^^
+
 template <class _InIt, class _OutIt>
 _CONSTEXPR20 _OutIt copy(_InIt _First, _InIt _Last, _OutIt _Dest) { // copy [_First, _Last) to [_Dest, ...)
     _Adl_verify_range(_First, _Last);
     const auto _UFirst = _Get_unwrapped(_First);
     const auto _ULast  = _Get_unwrapped(_Last);
     const auto _UDest  = _Get_unwrapped_n(_Dest, _Idl_distance<_InIt>(_UFirst, _ULast));
+
+#if _ITERATOR_DEBUG_LEVEL == 2
+    if _CONSTEXPR_IF (_Iterators_are_contiguous<_Unwrapped_t<_InIt>, _Unwrapped_t<_OutIt>>) {
+#ifdef __cpp_lib_is_constant_evaluated
+        if (!_STD is_constant_evaluated())
+#endif // __cpp_lib_is_constant_evaluated
+        {
+            _STL_VERIFY(
+                _UDest + (_ULast - _UFirst) <= _UFirst || _ULast <= _UDest, "ranges should not overlap each other");
+        }
+    }
+#endif // _ITERATOR_DEBUG_LEVEL == 2
+
     _Seek_wrapped(_Dest, _Copy_unchecked(_UFirst, _ULast, _UDest));
     return _Dest;
 }
@@ -4968,20 +4995,6 @@ _INLINE_VAR constexpr bool _Pred_is_consistent_with_memcmp<_Elem1, _Elem2, _RANG
 template <class _Elem1, class _Elem2, class _Pr>
 _INLINE_VAR constexpr bool _Can_memcmp_elements_with_pred = _Can_memcmp_elements<_Elem1, _Elem2> //
     && _Pred_is_consistent_with_memcmp<_Elem1, _Elem2, _Pr>;
-
-// _Iterators_are_contiguous<_Iter1, _Iter2> reports whether both iterators are known to be contiguous.
-// (Without concepts, this detection is limited, which will limit when we can activate the memcmp optimization.)
-
-#ifdef __cpp_lib_concepts
-// When concepts are available, we can detect arbitrary contiguous iterators.
-template <class _Iter1, class _Iter2>
-_INLINE_VAR constexpr bool _Iterators_are_contiguous = contiguous_iterator<_Iter1> //
-    && contiguous_iterator<_Iter2>;
-#else // ^^^ defined(__cpp_lib_concepts) ^^^ / vvv !defined(__cpp_lib_concepts) vvv
-// When concepts aren't available, we can detect pointers. (Iterators should be unwrapped before using this.)
-template <class _Iter1, class _Iter2>
-_INLINE_VAR constexpr bool _Iterators_are_contiguous = conjunction_v<is_pointer<_Iter1>, is_pointer<_Iter2>>;
-#endif // ^^^ !defined(__cpp_lib_concepts) ^^^
 
 // _Equal_memcmp_is_safe<_Iter1, _Iter2, _Pr> reports whether we can activate the memcmp optimization
 // for arbitrary iterators and predicates.
