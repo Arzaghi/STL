@@ -1040,9 +1040,9 @@ public:
         pointer& _Mylast  = _My_data._Mylast;
 
 #if _ITERATOR_DEBUG_LEVEL == 2
-        const_pointer _Valptr = addressof(_Val);
-        _STL_VERIFY(
-            _Valptr < _Myfirst || _Valptr >= _Mylast, "assignment value cannot be a reference into the container");
+        auto _Valptr = _Unfancy(_STD addressof(_Val));
+        _STL_VERIFY(_Valptr < _Unfancy(_Myfirst) || _Unfancy(_Mylast) <= _Valptr,
+            "assignment value cannot be a reference into the container");
 #endif // _ITERATOR_DEBUG_LEVEL == 2
 
         _My_data._Orphan_all();

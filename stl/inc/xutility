@@ -4426,8 +4426,8 @@ _CONSTEXPR20 _OutIt copy(_InIt _First, _InIt _Last, _OutIt _Dest) { // copy [_Fi
     const auto _ULast  = _Get_unwrapped(_Last);
     const auto _UDest  = _Get_unwrapped_n(_Dest, _Idl_distance<_InIt>(_UFirst, _ULast));
 
-#if _ITERATOR_DEBUG_LEVEL == 2
-    if _CONSTEXPR_IF (_Iterators_are_contiguous<_Unwrapped_t<_InIt>, _Unwrapped_t<_OutIt>>) {
+#if _ITERATOR_DEBUG_LEVEL == 2 && _HAS_IF_CONSTEXPR
+    if constexpr (_Iterators_are_contiguous<_Unwrapped_t<_InIt>, _Unwrapped_t<_OutIt>>) {
 #ifdef __cpp_lib_is_constant_evaluated
         if (!_STD is_constant_evaluated())
 #endif // __cpp_lib_is_constant_evaluated
@@ -4436,7 +4436,7 @@ _CONSTEXPR20 _OutIt copy(_InIt _First, _InIt _Last, _OutIt _Dest) { // copy [_Fi
                 _UDest + (_ULast - _UFirst) <= _UFirst || _ULast <= _UDest, "ranges should not overlap each other");
         }
     }
-#endif // _ITERATOR_DEBUG_LEVEL == 2
+#endif // _ITERATOR_DEBUG_LEVEL == 2 && _HAS_IF_CONSTEXPR
 
     _Seek_wrapped(_Dest, _Copy_unchecked(_UFirst, _ULast, _UDest));
     return _Dest;
