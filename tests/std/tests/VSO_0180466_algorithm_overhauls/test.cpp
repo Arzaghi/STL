@@ -343,10 +343,19 @@ namespace test_lexicographical_compare {
 
 namespace test_std_copy {
     void test() {
-        array<int, 4> target{{42, 43, 44, 45}};
-        array<int, 2> input{{1729, 1730}};
-        copy(input.begin(), input.end(), target.begin() + 1);
-        assert((target == array<int, 4>{{42, 1729, 1730, 45}}));
+        {
+            array<int, 4> target{{42, 43, 44, 45}};
+            array<int, 2> input{{1729, 1730}};
+            copy(input.begin(), input.end(), target.begin() + 1);
+            assert((target == array<int, 4>{{42, 1729, 1730, 45}}));
+        }
+        {
+            // GH-177: copy different-element-types ranges.
+            const array<short, 2> input{10, 20};
+            array<int, 2> target;
+            copy(input.begin(), input.end(), target.begin());
+            assert((target == array<int, 2>{{10, 20}}));
+        }
     }
 } // namespace test_std_copy
 
