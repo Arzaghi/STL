@@ -356,6 +356,12 @@ namespace test_std_copy {
             copy(input.begin(), input.end(), target.begin());
             assert((target == array<int, 2>{{10, 20}}));
         }
+        {
+            // GH-177: copy partial-overlapping ranges.
+            array<int, 4> input{10, 20, 30, 40};
+            copy(input.begin() + 1, input.end(), input.begin());
+            assert((input == array<int, 4>{{20, 30, 40, 40}}));
+        }
     }
 } // namespace test_std_copy
 
